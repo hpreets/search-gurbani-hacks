@@ -1,0 +1,115 @@
+function formatPage() {
+
+	// document.querySelector('.ang-wrapper').style.display = '';
+	
+	document.querySelector('.header').style.display = 'none';
+	document.querySelector('.audio-p').style.display = 'none';
+	document.querySelector('.inner-actions').style.display = 'none';
+	document.querySelector('.seventh-container').style.display = 'none';
+	
+	// document.querySelector('.container').style.maxWidth = '100%';
+	const angDisplay = document.querySelector('.ang-display');
+	angDisplay.style.marginTop = '10px!important';
+	angDisplay.parentElement.parentElement.style.maxWidth = '100%';
+	
+	if (document.querySelector('.ang-wrapper-v2')) {
+		document.querySelector('.ang-wrapper-v2').innerHTML = '';
+	}
+	else {
+		const angWrapperV2 = document.createElement('div');
+		angWrapperV2.classList.add('ang-wrapper-v2');
+		angDisplay.appendChild(angWrapperV2);
+	}
+	
+	const angWrapper = document.querySelector('.ang-wrapper-v2');
+	angWrapper.style.lineBreak = 'anywhere';
+	angWrapper.style.paddingLeft = '10px';
+	angWrapper.style.paddingRight = '5px';
+	
+	
+	// Replace '.your-parent-class' with the actual class name of the parent node
+	document.querySelectorAll('.ang-itm').forEach(parent => {
+
+		const tukChild = parent.children[0].children[0];
+		const transliterateChild = parent.children[0].children[1];
+		const tukMeaningChild = parent.children[0].children[2];
+		const wordMeaningChild = parent.children[0].children[3];
+		const lineAttrChild = parent.children[0].children[4];
+
+		const newDiv = document.createElement('span');
+		newDiv.style.fontFamily = 'AnmolUniBani'; 
+		newDiv.style.fontSize = '32px';
+		// newDiv.classList.add('my-class');
+
+		let words = tukChild.textContent.replace(/[;,]/g, '').split(" "); // Split by space
+		const wordsDiv = document.createElement('span');
+		wordsDiv.classList.add('tuk');
+		// wordsDiv.style.fontWeight = 'bold';
+		for (let word of words) {
+			const wordDiv = document.createElement('span');
+			wordDiv.textContent = word;
+			if (word == 'ੴ') wordDiv.style.fontWeight = 'bold';
+			wordsDiv.appendChild(wordDiv);
+		}
+		newDiv.appendChild(wordsDiv);
+		// newDiv.textContent = tukChild.textContent
+		const tooltip = parent.cloneNode(true);
+		newDiv.appendChild(tooltip);
+		
+		angWrapper.appendChild(newDiv);
+		tooltip.style.display = 'none';
+		tooltip.style.zIndex = 999;
+		tooltip.style.position = 'absolute';
+		tooltip.style.backgroundColor = '#ddd';
+		tooltip.style.transform = 'translateX(-50%)';
+		tooltip.style.left = '50%';
+		tooltip.style.width = '1000px';
+		
+		newDiv.addEventListener('click', function () {
+			if (newDiv.children[1].style.display == 'none') {
+				newDiv.children[1].style.display = '';
+			}
+			else {
+				newDiv.children[1].style.display = 'none';
+			}
+		});
+		
+		wordsDiv.addEventListener('mouseenter', function () {
+			wordsDiv.style.backgroundColor = 'wheat';
+		});
+		wordsDiv.addEventListener('mouseleave', function () {
+			wordsDiv.style.backgroundColor = '';
+		});
+		
+	});
+	
+	document.querySelectorAll('.navigation-btn-audio').forEach(parent => {
+		const nextBtn = parent.children[2];
+		if (nextBtn) {
+			nextBtn.style.minWidth = '800px';
+		}
+		parent.children[0].style.display = 'none'; // Begin Button
+		parent.children[3].style.display = 'none'; // Last Button
+	});
+
+	document.querySelectorAll('.go-line-wrapper').forEach(buttonRow => {
+		buttonRow.style.marginBottom = '500px';
+	});
+	
+	document.querySelector('.ang-wrapper').style.display = 'none';
+}
+
+formatPage();
+
+const target = document.querySelector('.ang-wrapper');
+const observer = new MutationObserver(function(mutationsList, observer) {
+	console.log("Content changed!");
+	formatPage();
+});
+
+observer.observe(target, {
+	childList: true,       // Detect when child nodes are added or removed
+	subtree: true,         // Watch all descendants
+	characterData: true    // Detect changes in text nodes
+});
+
