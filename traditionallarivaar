@@ -93,8 +93,12 @@ function formatPage() {
 	});
 
 	document.querySelectorAll('.go-line-wrapper').forEach(buttonRow => {
-		buttonRow.style.marginBottom = '500px';
+		// buttonRow.style.marginBottom = '500px';
+		buttonRow.style.bottom = '10px';
+		buttonRow.style.position = 'fixed';
+		
 	});
+	document.querySelector('.five-container-footer').style.marginTop = '500px';
 	
 	document.querySelector('.ang-wrapper').style.display = 'none';
 }
