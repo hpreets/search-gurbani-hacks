@@ -1,0 +1,93 @@
+
+function formatPage() {
+
+	document.querySelector('.header').style.display = 'none';
+	document.querySelector('.audio-p').style.display = 'none';
+	document.querySelector('.inner-actions').style.display = 'none';
+	document.querySelector('.seventh-container').style.display = 'none';
+	// document.querySelector('.five-container-footer').style.display = 'none';
+
+	// Replace '.your-parent-class' with the actual class name of the parent node
+	document.querySelectorAll('.ang-itm').forEach(parent => {
+
+		parent.style.padding = '5px';
+		
+		const tukChild = parent.children[0].children[0];
+		const transliterateChild = parent.children[0].children[1];
+		const tukMeaningChild = parent.children[0].children[2];
+		const wordMeaningChild = parent.children[0].children[3];
+		const lineAttrChild = parent.children[0].children[4];
+
+		if (tukChild && transliterateChild) {
+			// Hide the second child initially
+			transliterateChild.style.display = 'none';
+			tukMeaningChild.style.display = 'none';
+			wordMeaningChild.style.display = 'none';
+
+			// Add click event to the first child
+			if (lineAttrChild.style.display != 'none') {
+				tukChild.addEventListener('click', () => {
+					// Toggle display of second child
+					if (transliterateChild.style.display === 'none') {
+						transliterateChild.style.display = 'block';
+						tukMeaningChild.style.display = 'block';
+						wordMeaningChild.style.display = 'block';
+					} else {
+						transliterateChild.style.display = 'none';
+						tukMeaningChild.style.display = 'none';
+						wordMeaningChild.style.display = 'none';
+					}
+				});
+			}
+		}
+		if (lineAttrChild) lineAttrChild.style.display = 'none';
+		
+		if (tukChild) {
+			tukChild.style.fontFamily = 'AnmolUniBani';
+			tukChild.style.fontSize = '36px';
+		}
+
+	});
+
+
+	document.querySelectorAll('.navigation-btn-audio').forEach(parent => {
+		const nextBtn = parent.children[2];
+		if (nextBtn) nextBtn.style.minWidth = '800px';
+		// if (nextBtn) nextBtn.style.minHeight = '800px';
+	});
+}
+
+formatPage();
+
+/* *********************************************************************** */
+
+// Create the button element
+const button = document.createElement('button');
+button.innerText = 'Format Page';
+
+// Style the button to stay fixed on screen
+Object.assign(button.style, {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    zIndex: '9999', // ensure it's on top
+    padding: '10px 15px',
+    backgroundColor: '#007BFF',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+});
+
+// Add the button to the body
+document.body.appendChild(button);
+
+// Add click event handler
+button.addEventListener('click', function () {
+	formatPage();
+});
+
+
+
