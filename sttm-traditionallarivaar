@@ -1,121 +1,252 @@
-javascript: (function () {
-    function formatPage() {
-        document.querySelector("#nav-bar").style.display = "none";
-        document.querySelector(".breadcrumb").style.display = "none";
-        document.querySelector("#controls-menu").style.display = "none";
-        document.querySelector(".pagination-ang").style.display = "none";
-        document.querySelector(".footer-background").style.display = "none";
-        document.querySelector("#freshworks-container").style.display = "none";
-        document.querySelector(".floatingActions").style.display = "none";
-        const contentRoot = document.querySelector("#content-root");
-        contentRoot.style.maxWidth = "100%";
-        const shabad = document.querySelector("#shabad");
-        shabad.style.padding = "84px 10px 5px 10px";
-        shabad.style.display = "block";
-        shabad.style.lineBreak = "anywhere";
-        shabad.style.height = "1500px";
-        const topButtonRow = document.querySelector(".shabad-container");
-        topButtonRow.style.position = "fixed";
-        topButtonRow.style.marginTop = "-15px";
-        const topButtonRowNew = document.querySelector("#metadata");
-        topButtonRowNew.children[1].children[1].style.display = "none";
-        topButtonRowNew.style.padding = "0px";
-        topButtonRowNew.style.margin = "0rem 2rem 0rem 2rem";
-        topButtonRowNew.style.position = "fixed";
-        let shabadPage = document.querySelector(".shabadPage");
-        if (!shabadPage) {
-            shabadPage = document.createElement("div");
-            shabadPage.classList.add("shabadPage");
-            shabadPage.style.padding = "5px 10px 5px 2px";
-            shabad.appendChild(shabadPage);
-        } else {
-            shabadPage.innerHTML = "";
-        }
-        document.querySelectorAll(".mixed-view-baani-wrapper").forEach((minViewBaniWrapper) => {
-            const newDiv = document.createElement("span");
-            let wordsDiv;
-            minViewBaniWrapper.querySelectorAll(".unicode").forEach((unicode) => {
-                if (unicode.children.length > 0) {
-                    let containWords = false;
-                    wordsDiv = document.createElement("span");
-                    wordsDiv.classList.add("tuk");
-                    wordsDiv.style.fontFamily = "AnmolUni";
-                    wordsDiv.style.fontSize = "40px";
-                    wordsDiv.style.paddingTop = "10px";
-                    wordsDiv.style.paddingBottom = "5px";
-                    for (let word of unicode.children) {
-                        containWords = true;
-                        const wordDiv = document.createElement("span");
-                        wordDiv.textContent = word.textContent.trim();
-                        if (word.textContent.trim() == "ੴ") {
-                            wordDiv.style.fontWeight = "bold";
-                            wordDiv.style.color = "crimson";
-                        }
-                        wordsDiv.appendChild(wordDiv);
-                    }
-                    if (containWords) newDiv.appendChild(wordsDiv);
-                }
-            });
-            const tooltip = minViewBaniWrapper.cloneNode(true);
-            tooltip.style.display = "none";
-            tooltip.style.zIndex = 999;
-            tooltip.style.position = "absolute";
-            tooltip.style.backgroundColor = "#ddd";
-            tooltip.style.transform = "translateX(-50%)";
-            tooltip.style.left = "50%";
-            tooltip.style.width = "1000px";
-            tooltip.style.padding = "25px 25px 25px 25px";
-            newDiv.appendChild(tooltip);
-            minViewBaniWrapper.style.display = "none";
-            shabadPage.appendChild(newDiv);
-            newDiv.addEventListener("click", function () {
-                if (newDiv.children[1].style.display == "none") {
-                    newDiv.children[1].style.display = "";
-                } else {
-                    newDiv.children[1].style.display = "none";
-                }
-            });
-            if (wordsDiv) {
-                wordsDiv.addEventListener("mouseenter", function () {
-                    wordsDiv.style.backgroundColor = "wheat";
-                });
-                wordsDiv.addEventListener("mouseleave", function () {
-                    wordsDiv.style.backgroundColor = "";
-                });
-            }
-        });
+javascript:(function () {
+
+  function formatPage() {
+
+    // Hide unwanted elements
+    const selectorsToHide = [
+      '#nav-bar',
+      '.breadcrumb',
+      '#controls-menu',
+      '.pagination-ang',
+      '.footer-background',
+      '#freshworks-container',
+      '.floatingActions'
+    ];
+
+    selectorsToHide.forEach(selector => {
+      const el = document.querySelector(selector);
+      if (el) el.style.display = 'none';
+    });
+
+    // Expand content width
+    const contentRoot = document.querySelector('#content-root');
+    if (contentRoot) {
+      contentRoot.style.maxWidth = '100%';
     }
+
+    // Style main shabad container
+    const shabad = document.querySelector('#shabad');
+    if (shabad) {
+      shabad.style.padding = '84px 10px 5px 10px';
+      shabad.style.display = 'block';
+      shabad.style.lineBreak = 'anywhere';
+      shabad.style.height = '1500px';
+    }
+
+    // Fix top button row
+    const topButtonRow = document.querySelector('.shabad-container');
+    if (topButtonRow) {
+      topButtonRow.style.position = 'fixed';
+      topButtonRow.style.marginTop = '-15px';
+    }
+
+    // Adjust metadata section
+    const metadata = document.querySelector('#metadata');
+    if (metadata) {
+      if (metadata.children[1] && metadata.children[1].children[1]) {
+        metadata.children[1].children[1].style.display = 'none';
+      }
+
+      metadata.style.padding = '0px';
+      metadata.style.margin = '0rem 2rem 0rem 2rem';
+      metadata.style.position = 'fixed';
+    }
+
+    // Create or reset shabadPage container
+    let shabadPage = document.querySelector('.shabadPage');
+
+    if (!shabadPage) {
+      shabadPage = document.createElement('div');
+      shabadPage.classList.add('shabadPage');
+      shabadPage.style.padding = '5px 10px 5px 2px';
+      shabad.appendChild(shabadPage);
+    } else {
+      shabadPage.innerHTML = '';
+    }
+
+    // Process each bani wrapper
+    document.querySelectorAll('.mixed-view-baani-wrapper')
+      .forEach(minViewBaniWrapper => {
+
+        const newDiv = document.createElement('span');
+        let wordsDiv;
+
+        minViewBaniWrapper.querySelectorAll('.unicode')
+          .forEach(unicode => {
+
+            if (unicode.children.length > 0) {
+
+              let containWords = false;
+              wordsDiv = document.createElement('span');
+
+              wordsDiv.classList.add('tuk');
+              wordsDiv.style.fontFamily = 'AnmolUni';
+              wordsDiv.style.fontSize = '40px';
+              wordsDiv.style.paddingTop = '10px';
+              wordsDiv.style.paddingBottom = '5px';
+
+              for (let word of unicode.children) {
+                containWords = true;
+
+                const wordDiv = document.createElement('span');
+                wordDiv.textContent = word.textContent.trim();
+
+                if (word.textContent.trim() === 'ੴ') {
+                  wordDiv.style.fontWeight = 'bold';
+                  wordDiv.style.color = 'crimson';
+                }
+
+                wordsDiv.appendChild(wordDiv);
+              }
+
+              if (containWords) {
+                newDiv.appendChild(wordsDiv);
+              }
+            }
+          });
+
+        // Create tooltip (cloned original content)
+        const tooltip = minViewBaniWrapper.cloneNode(true);
+
+        Object.assign(tooltip.style, {
+          display: 'none',
+          zIndex: 999,
+          position: 'absolute',
+          backgroundColor: '#ddd',
+          /*transform: 'translateX(-50%)',
+          left: '50%',
+          width: '1000px',*/
+		  
+		  /*position = 'absolute';*/
+		  maxWidth: '1000px',
+		  /*display = 'none';*/
+		  /*backgroundColor = '#ddd';*/
+		  /*padding = '25px';*/
+		  /*zIndex = '999';*/
+
+          padding: '25px'
+        });
+
+        newDiv.appendChild(tooltip);
+
+        // Hide original wrapper
+        minViewBaniWrapper.style.display = 'none';
+
+        shabadPage.appendChild(newDiv);
+
+        // Toggle tooltip on click
+        /*newDiv.addEventListener('click', function () {
+          const tooltip = newDiv.children[1];
+          tooltip.style.display =
+            tooltip.style.display === 'none' ? '' : 'none';
+        });*/
+		newDiv.addEventListener('click', function (e) {
+		  if (wordsDiv.style.color != 'red') {
+			wordsDiv.style.color = 'red';
+		  }
+		  else {
+			wordsDiv.style.color = '#03669b';
+		  }
+
+		  const tooltip = newDiv.children[1];
+
+		  // Toggle
+		  if (tooltip.style.display === 'none') {
+			tooltip.style.display = 'block';
+		  } else {
+			tooltip.style.display = 'none';
+			return;
+		  }
+
+		  // Get clicked element position
+		  const rect = newDiv.getBoundingClientRect();
+		  const viewportWidth = window.innerWidth;
+		  const viewportHeight = window.innerHeight;
+
+		  // Reset transform (we’ll control positioning manually)
+		  tooltip.style.transform = 'none';
+
+		  // Vertical positioning (align near clicked text)
+		  tooltip.style.top = window.scrollY + e.clientY + 'px';
+
+		  console.log('e.clientX ::' + e.clientX);
+		  console.log('viewportWidth ::' + viewportWidth);
+		  // Decide left or right placement
+		  if (e.clientX > viewportWidth / 2) {
+			// Clicked on RIGHT side → show tooltip on LEFT
+			tooltip.style.left = (e.clientX - tooltip.offsetWidth - 20) + 'px';
+		  } else {
+			// Clicked on LEFT side → show tooltip on RIGHT
+			tooltip.style.left = (e.clientX + 20) + 'px';
+		  }
+
+		  // Prevent bottom overflow
+		  const tooltipRect = tooltip.getBoundingClientRect();
+		  if (tooltipRect.bottom > viewportHeight) {
+			const overflow = tooltipRect.bottom - viewportHeight + 20;
+			tooltip.style.top = (window.scrollY + e.clientY - overflow) + 'px';
+		  }
+		});
+
+
+        // Highlight on hover
+        if (wordsDiv) {
+          wordsDiv.addEventListener('mouseenter', function () {
+            wordsDiv.style.backgroundColor = 'wheat';
+			// wordsDiv.style.color = 'red';
+          });
+
+          wordsDiv.addEventListener('mouseleave', function () {
+            wordsDiv.style.backgroundColor = '';
+			// wordsDiv.style.color = '#03669b';
+          });
+        }
+      });
+  }
+
+  // Run once immediately
+  formatPage();
+
+  // Create Format Page button
+  const button = document.createElement('button');
+  button.classList.add('formatPageButton');
+  button.innerText = 'Format Page';
+
+  Object.assign(button.style, {
+    position: 'fixed',
+    top: '16px',
+    right: '120px',
+    zIndex: '9999',
+    padding: '10px 15px',
+    backgroundColor: '#007BFF',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+  });
+
+  document.body.appendChild(button);
+
+  button.addEventListener('click', function () {
     formatPage();
-    const button = document.createElement("button");
-    button.classList.add("formatPageButton");
-    button.innerText = "Format Page";
-    Object.assign(button.style, {
-        position: "fixed",
-        top: "16px",
-        right: "120px",
-        zIndex: "9999",
-        padding: "10px 15px",
-        backgroundColor: "#007BFF",
-        color: "#fff",
-        border: "none",
-        borderRadius: "5px",
-        fontSize: "14px",
-        cursor: "pointer",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    });
-    document.body.appendChild(button);
-    button.addEventListener("click", function () {
-        formatPage();
-    });
-    document.addEventListener("keydown", function (event) {
-        if (event.key === "ArrowRight" || event.key === "k") {
-            document.querySelectorAll(".shabad-nav a")[1].click();
-        }
-        if (event.key === "ArrowLeft" || event.key === "h") {
-            document.querySelectorAll(".shabad-nav a")[0].click();
-        }
-        if (event.key === "j" || event.key === "J") {
-            document.querySelector(".formatPageButton").click();
-        }
-    });
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function (event) {
+
+    if (event.key === 'ArrowRight' || event.key === 'k') {
+      document.querySelectorAll('.shabad-nav a')[1]?.click();
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'h') {
+      document.querySelectorAll('.shabad-nav a')[0]?.click();
+    }
+
+    if (event.key === 'j' || event.key === 'J') {
+      document.querySelector('.formatPageButton')?.click();
+    }
+  });
+
 })();
