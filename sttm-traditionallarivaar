@@ -114,12 +114,19 @@ javascript: (function () {
 			tukList.push(newDiv);
         });
 		
+		let lastNewParaAfter = 0;
 		for (let i = 0; i < tukList.length; i++) {
 		// tukList.forEach((newDiv) => {
 			
 			let newDiv = tukList[i];
 			// console.log(newDiv.textContent);
 			// console.log(JSON.stringify(newDiv));
+			
+			// If ੴ starts without ||<number>||<number>||. For e.g. on Ang 343, 344
+			if ((newDiv.innerHTML.includes('ੴ'))  &&  (i > lastNewParaAfter + 3)) {
+				shabadPage.appendChild(document.createElement("p"));
+				lastNewParaAfter = i;
+			}
 			
 			shabadPage.appendChild(newDiv);
 
@@ -130,15 +137,19 @@ javascript: (function () {
 				let nextUpIkOankar = false;
 				
 				// If yes, then check next 5 tuks to see if ੴ is present in them.
-				for (let j = 1; j < 5; j++) {
+				for (let j = 0; j < 5; j++) {
 					if (i+j < tukList.length) {
 						nextUpIkOankar = nextUpIkOankar || tukList[i+j].innerHTML.includes('ੴ');
 					}
 				}
 				
 				// if ੴ is present, then add a new line.
-				if (nextUpIkOankar) shabadPage.appendChild(document.createElement("p"));
+				if (nextUpIkOankar) {
+					shabadPage.appendChild(document.createElement("p"));
+					lastNewParaAfter = i;
+				}
 			}
+			
 		} // );
     }
     formatPage();
