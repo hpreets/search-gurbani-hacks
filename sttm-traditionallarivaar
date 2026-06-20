@@ -31,6 +31,8 @@ javascript: (function () {
         } else {
             shabadPage.innerHTML = "";
         }
+		let tukList = [];
+		let countOfIkOankarOnPage = 0;
         document.querySelectorAll(".mixed-view-baani-wrapper").forEach((minViewBaniWrapper) => {
             const newDiv = document.createElement("span");
             let wordsDiv;
@@ -49,6 +51,7 @@ javascript: (function () {
                         const wordDiv = document.createElement("span");
 						wordDiv.textContent = word.textContent.trim();
                         if (word.textContent.trim() == "ੴ") {
+							countOfIkOankarOnPage++;
 							containIkOankar = true;
                             wordDiv.style.fontWeight = "bold";
                             wordDiv.style.color = "crimson";
@@ -69,7 +72,7 @@ javascript: (function () {
             tooltip.style.padding = "25px 25px 25px 25px";
             newDiv.appendChild(tooltip);
             minViewBaniWrapper.style.display = "none";
-            shabadPage.appendChild(newDiv);
+            // shabadPage.appendChild(newDiv);
 			
 			const viewportWidth = window.innerWidth;
 			const viewportHeight = window.innerHeight;
@@ -108,7 +111,35 @@ javascript: (function () {
                     wordsDiv.style.backgroundColor = "";
                 });
             }
+			tukList.push(newDiv);
         });
+		
+		for (let i = 0; i < tukList.length; i++) {
+		// tukList.forEach((newDiv) => {
+			
+			let newDiv = tukList[i];
+			// console.log(newDiv.textContent);
+			// console.log(JSON.stringify(newDiv));
+			
+			shabadPage.appendChild(newDiv);
+
+			const regex = /\|\|\d+\|\|\d+\|\|/;
+			// Check if current tuk is shabad ending indicated by presence of ||<number>||<number>||
+			if (regex.test(newDiv.innerHTML)) {
+				console.log('Pattern found!!');
+				let nextUpIkOankar = false;
+				
+				// If yes, then check next 5 tuks to see if ੴ is present in them.
+				for (let j = 1; j < 5; j++) {
+					if (i+j < tukList.length) {
+						nextUpIkOankar = nextUpIkOankar || tukList[i+j].innerHTML.includes('ੴ');
+					}
+				}
+				
+				// if ੴ is present, then add a new line.
+				if (nextUpIkOankar) shabadPage.appendChild(document.createElement("p"));
+			}
+		} // );
     }
     formatPage();
     const button = document.createElement("button");
