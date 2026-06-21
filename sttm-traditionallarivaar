@@ -40,12 +40,24 @@ javascript: (function () {
                 if (unicode.children.length > 0) {
                     let containWords = false;
 					let containIkOankar = false;
+					let completeTuk = '';
                     wordsDiv = document.createElement("span");
                     wordsDiv.classList.add("tuk");
                     wordsDiv.style.fontFamily = "AnmolUni";
                     wordsDiv.style.fontSize = "40px";
                     wordsDiv.style.paddingTop = "10px";
                     wordsDiv.style.paddingBottom = "5px";
+					for (let word of unicode.children) {
+						completeTuk += word.textContent.trim();
+						console.log('Inside word.textContent.trim() :::' + word.textContent.trim());
+						console.log('Inside completeTuk :::' + completeTuk);
+					}
+					console.log('completeTuk :::' + completeTuk);
+					if (completeTuk  &&  completeTuk.includes('ੴਸਤਿਨਾਮੁਕਰਤਾਪੁਰਖੁਨਿਰਭਉਨਿਰਵੈਰੁਅਕਾਲਮੂਰਤਿਅਜੂਨੀਸੈਭੰਗੁਰਪ੍ਰਸਾਦਿ')) {
+						wordsDiv.style.fontSize = "60px";
+						wordsDiv.style.display = "block";
+						wordsDiv.style.textAlign = "center";
+					}
                     for (let word of unicode.children) {
                         containWords = true;
                         const wordDiv = document.createElement("span");
