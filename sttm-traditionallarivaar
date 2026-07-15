@@ -10,7 +10,7 @@ javascript: (function () {
         const contentRoot = document.querySelector("#content-root");
         contentRoot.style.maxWidth = "100%";
         const shabad = document.querySelector("#shabad");
-        shabad.style.padding = "84px 10px 5px 10px";
+        shabad.style.padding = "64px 10px 5px 10px";
         shabad.style.display = "block";
         shabad.style.lineBreak = "anywhere";
         shabad.style.height = "1500px";
@@ -22,6 +22,8 @@ javascript: (function () {
         topButtonRowNew.style.padding = "0px";
         topButtonRowNew.style.margin = "0rem 2rem 0rem 2rem";
         topButtonRowNew.style.position = "fixed";
+		topButtonRowNew.style.height = "60px";
+		document.querySelector('.floatingActionsBottom').style.display = "none";
         let shabadPage = document.querySelector(".shabadPage");
         if (!shabadPage) {
             shabadPage = document.createElement("div");
@@ -56,18 +58,31 @@ javascript: (function () {
 					if (completeTuk  &&  completeTuk.includes('ੴਸਤਿਨਾਮੁਕਰਤਾਪੁਰਖੁਨਿਰਭਉਨਿਰਵੈਰੁਅਕਾਲਮੂਰਤਿਅਜੂਨੀਸੈਭੰਗੁਰਪ੍ਰਸਾਦਿ')) {
 						wordsDiv.style.fontSize = "60px";
 						wordsDiv.style.display = "block";
+						wordsDiv.style.color = "maroon";
 						wordsDiv.style.textAlign = "center";
+					}
+					else if (completeTuk  &&  completeTuk.includes('ੴ')) {
+						wordsDiv.style.color = "maroon";
+						// wordsDiv.style.fontWeight = "bold";
+					}
+					if (document.querySelector('#metadata > div.meta > h4.gurbani-font > a').innerHTML.includes('347')) {
+						const body = document.body;
+						body.style.backgroundColor = "aliceblue";
+					}
+					else {
+						const body = document.body;
+						body.style.backgroundColor = "#f5f5f5";
 					}
                     for (let word of unicode.children) {
                         containWords = true;
                         const wordDiv = document.createElement("span");
 						wordDiv.textContent = word.textContent.trim();
-                        if (word.textContent.trim() == "ੴ") {
+                        /*if (word.textContent.trim() == "ੴ") {
 							countOfIkOankarOnPage++;
 							containIkOankar = true;
                             wordDiv.style.fontWeight = "bold";
                             wordDiv.style.color = "crimson";
-                        }
+                        }*/
                         wordsDiv.appendChild(wordDiv);
                     }
                     if (containWords) newDiv.appendChild(wordsDiv);
@@ -170,7 +185,7 @@ javascript: (function () {
     button.innerText = "Format Page";
     Object.assign(button.style, {
         position: "fixed",
-        top: "16px",
+        top: "10px",
         right: "120px",
         zIndex: "9999",
         padding: "10px 15px",
@@ -197,4 +212,83 @@ javascript: (function () {
             document.querySelector(".formatPageButton").click();
         }
     });
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	let lastAng = null;
+	let running = false;
+
+	function waitForSettled(selector, {
+	  settleMs = 300,
+	  timeoutMs = 8000
+	} = {}) {
+	  return new Promise((resolve, reject) => {
+		const start = Date.now();
+		let lastCount = -1;
+		let lastMutationAt = Date.now();
+
+		const check = () => {
+		  const nodes = document.querySelectorAll(selector);
+		  const count = nodes.length;
+
+		  if (count > 0 && count === lastCount) {
+			// count is stable; if DOM also hasn't changed recently, we're done
+			if (Date.now() - lastMutationAt >= settleMs) {
+			  obs.disconnect();
+			  resolve(nodes);
+			}
+		  } else {
+			lastCount = count;
+		  }
+		};
+
+		const obs = new MutationObserver(() => {
+		  lastMutationAt = Date.now();
+		  check();
+		});
+
+		obs.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+
+		// initial check + timeout
+		const t = setInterval(() => {
+		  check();
+		  if (Date.now() - start > timeoutMs) {
+			clearInterval(t);
+			obs.disconnect();
+			reject(new Error(`Timeout waiting for "${selector}" to settle`));
+		  }
+		}, 50);
+	  });
+	}
+
+	async function trackAndFormat() {
+	  const currentAng = new URL(location.href).searchParams.get("ang");
+	  console.log("ang loaded -> formatting:", currentAng, new Date().toISOString());
+	  // navigator.sendBeacon('/track', JSON.stringify({ event: 'ang_loaded', ang: currentAng, at: Date.now() }));
+	  document.querySelector(".formatPageButton")?.click();
+	}
+
+	const observer = new MutationObserver(async () => {
+	  const ang = new URL(location.href).searchParams.get("ang");
+	  if (!ang || ang === lastAng || running) return;
+
+	  lastAng = ang;
+	  running = true;
+
+	  try {
+		await waitForSettled(".mixed-view-baani-wrapper", { settleMs: 30, timeoutMs: 8000 });
+		await trackAndFormat();
+	  } finally {
+		running = false;
+	  }
+	});
+
+	observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
