@@ -1,4 +1,75 @@
 javascript: (function () {
+
+    // ---------- Loading overlay ----------
+    function showLoadingOverlay() {
+        let overlay = document.querySelector("#sttm-loading-overlay");
+        if (overlay) {
+            overlay.style.display = "flex";
+            return overlay;
+        }
+        overlay = document.createElement("div");
+        overlay.id = "sttm-loading-overlay";
+        Object.assign(overlay.style, {
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "#f5f5f5",
+            zIndex: "99999",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            fontFamily: "sans-serif",
+        });
+
+        const spinner = document.createElement("div");
+        Object.assign(spinner.style, {
+            width: "48px",
+            height: "48px",
+            border: "5px solid #ddd",
+            borderTopColor: "#007BFF",
+            borderRadius: "50%",
+            animation: "sttm-spin 0.8s linear infinite",
+            marginBottom: "16px",
+        });
+
+        // Keyframes need to be injected once via a style tag
+        if (!document.querySelector("#sttm-spin-style")) {
+            const styleTag = document.createElement("style");
+            styleTag.id = "sttm-spin-style";
+            styleTag.textContent = "@keyframes sttm-spin { to { transform: rotate(360deg); } }";
+            document.head.appendChild(styleTag);
+        }
+
+        const label = document.createElement("div");
+        label.innerText = "Loading Ang...";
+        label.style.color = "#555";
+        label.style.fontSize = "16px";
+
+        overlay.appendChild(spinner);
+        overlay.appendChild(label);
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function hideLoadingOverlay() {
+        const overlay = document.querySelector("#sttm-loading-overlay");
+        if (overlay) overlay.style.display = "none";
+    }
+
+    // Show overlay immediately, before anything else runs
+    showLoadingOverlay();
+
+    // Tuks that should always start a new paragraph, matched exactly against
+    // the concatenated Gurmukhi text of the tuk (no spaces, same shape as
+    // "completeTuk" below). Add more exact strings here as needed.
+    const specialTuks = new Set([
+        "ਨਾਨਕਤੇਮੁਖਉਜਲੇਕੇਤੀਛੁਟੀਨਾਲਿ॥੧॥",
+        "ਜਿਹਸਿਮਰਤਸੰਕਟਮਿਟੈਦਰਸੁਤੁਹਾਰੋਹੋਇ॥੫੭॥੧॥",
+    ]);
+
     function formatPage() {
         document.querySelector("#nav-bar").style.display = "none";
         document.querySelector(".breadcrumb").style.display = "none";
@@ -7,6 +78,7 @@ javascript: (function () {
         document.querySelector(".footer-background").style.display = "none";
         document.querySelector("#freshworks-container").style.display = "none";
         document.querySelector(".floatingActions").style.display = "none";
+		document.querySelector(".review-translations-banner").style.display = "none";
         const contentRoot = document.querySelector("#content-root");
         contentRoot.style.maxWidth = "100%";
         const shabad = document.querySelector("#shabad");
@@ -61,6 +133,10 @@ javascript: (function () {
 						wordsDiv.style.color = "maroon";
 						wordsDiv.style.textAlign = "center";
 					}
+					if (completeTuk  &&  completeTuk.includes('॥ਜਪੁ॥')) {
+						wordsDiv.style.display = "block";
+						wordsDiv.style.textAlign = "center";
+					}
 					else if (completeTuk  &&  completeTuk.includes('ੴ')) {
 						wordsDiv.style.color = "maroon";
 						// wordsDiv.style.fontWeight = "bold";
@@ -85,7 +161,12 @@ javascript: (function () {
                         }*/
                         wordsDiv.appendChild(wordDiv);
                     }
-                    if (containWords) newDiv.appendChild(wordsDiv);
+                    if (containWords) {
+                        newDiv.appendChild(wordsDiv);
+                        // Stash the raw concatenated text so the paragraph-break
+                        // loop below can exact-match it against specialTuks.
+                        newDiv.dataset.tukText = completeTuk;
+                    }
                 }
             });
             const tooltip = minViewBaniWrapper.cloneNode(true);
@@ -154,9 +235,16 @@ javascript: (function () {
 				shabadPage.appendChild(document.createElement("p"));
 				lastNewParaAfter = i;
 			}
-			
+
 			shabadPage.appendChild(newDiv);
 
+			// If this tuk's text exactly matches one of the configured
+			// specialTuks, also force a new paragraph before it.
+			if ((specialTuks.has(newDiv.dataset.tukText))  &&  (i > lastNewParaAfter)) {
+				shabadPage.appendChild(document.createElement("p"));
+				lastNewParaAfter = i;
+			}
+			
 			const regex = /\|\|\d+\|\|\d+\|\|/;
 			// Check if current tuk is shabad ending indicated by presence of ||<number>||<number>||
 			if (regex.test(newDiv.innerHTML)) {
@@ -178,7 +266,11 @@ javascript: (function () {
 			}
 			
 		} // );
+
+        // Formatting is done — safe to reveal the page now
+        hideLoadingOverlay();
     }
+
     formatPage();
     const button = document.createElement("button");
     button.classList.add("formatPageButton");
@@ -226,7 +318,7 @@ javascript: (function () {
 	let running = false;
 
 	function waitForSettled(selector, {
-	  settleMs = 300,
+	  settleMs = 30,
 	  timeoutMs = 8000
 	} = {}) {
 	  return new Promise((resolve, reject) => {
@@ -281,12 +373,17 @@ javascript: (function () {
 
 	  lastAng = ang;
 	  running = true;
+	  showLoadingOverlay();
 
 	  try {
-		await waitForSettled(".mixed-view-baani-wrapper", { settleMs: 30, timeoutMs: 8000 });
+		await waitForSettled(".mixed-view-baani-wrapper", { settleMs: 1000, timeoutMs: 8000 });
 		await trackAndFormat();
+	  } catch (err) {
+		console.error("sttm: failed waiting for page to settle", err);
 	  } finally {
 		running = false;
+		// Safety net: even if formatPage() never ran (e.g. timeout), don't leave the user stuck
+		hideLoadingOverlay();
 	  }
 	});
 
