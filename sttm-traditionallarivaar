@@ -1,462 +1,421 @@
-javascript: (function () {
+(function () {
+  const WRAPPER_SEL = '.sui-mixed-view-baani-wrapper';
+  const GURBANI_PARAGRAPH_SEL = '.sui-mixed-view-baani-paragraph';
+  const GURBANI_DISPLAY_SEL = '.sui-gurmukhi.sui-gurbani-display';
+  const MOOL_MANTAR_LINE = '<>siqnwmukrqwpurKuinrBauinrvYruAkwlmUriqAjUnIsYBMgurpRswid]';
 
-    // ---------- Loading overlay ----------
-    function showLoadingOverlay() {
-        let overlay = document.querySelector("#sttm-loading-overlay");
-        if (overlay) {
-            overlay.style.display = "flex";
-            return overlay;
+  const STYLE_ID = 'gurbani-flow-style';
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      :root, body, .layout, .shabad-page-layout {
+        --sui-sidebar-width: 0px !important;
+      }
+      html, body {
+        overflow-x: hidden !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+      }
+      #app-root, .app-main-content, .layout, .layout__main {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin: 0 !important;
+      }
+
+      @media (min-width: 1280px) {
+        .shabad-page-layout {
+          padding-right: 0 !important;
         }
-        overlay = document.createElement("div");
-        overlay.id = "sttm-loading-overlay";
-        Object.assign(overlay.style, {
-            position: "fixed",
-            top: "0",
-            left: "0",
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "#f5f5f5",
-            zIndex: "99999",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            fontFamily: "sans-serif",
-        });
+      }
 
-        const spinner = document.createElement("div");
-        Object.assign(spinner.style, {
-            width: "48px",
-            height: "48px",
-            border: "5px solid #ddd",
-            borderTopColor: "#007BFF",
-            borderRadius: "50%",
-            animation: "sttm-spin 0.8s linear infinite",
-            marginBottom: "16px",
-        });
+      .shabad-page-content {
+        padding: 0 24px 0 12px !important;
+      }
 
-        // Keyframes need to be injected once via a style tag
-        if (!document.querySelector("#sttm-spin-style")) {
-            const styleTag = document.createElement("style");
-            styleTag.id = "sttm-spin-style";
-            styleTag.textContent = "@keyframes sttm-spin { to { transform: rotate(360deg); } }";
-            document.head.appendChild(styleTag);
+      #nav-bar a[aria-label="back to home"],
+      .header-section--right,
+      .shabad-rail,
+      .sui-sidebar,
+      .footer {
+        display: none !important;
+      }
+
+      #metadata.metadata-ang {
+        display: none !important;
+      }
+
+      .shabad-page-layout,
+      .shabad-content-viewer,
+      .shabad-container,
+      .shabad-content,
+      .sui-shabad-content,
+      .multi-punjabi-sources,
+      .sui-mixed-view-baani {
+        max-width: none !important;
+        width: 100% !important;
+      }
+
+      #nav-bar.header {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        min-height: 0 !important;
+        align-items: center !important;
+        display: flex !important;
+      }
+      .header-search {
+        flex: 1 1 auto !important;
+      }
+      .shabad-settings {
+        position: static !important;
+        top: auto !important;
+        margin-left: 24px !important;
+        margin-right: 0 !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+      }
+      .shabad-content-viewer {
+        margin-top: 0 !important;
+        padding-top: 4px !important;
+      }
+
+      .gurbani-flow-hidden-original { display: none !important; }
+
+      .gurbani-flow-container {
+        display: block;
+        line-height: 1.6;
+        text-align: justify;
+        text-align-last: left;
+      }
+      .gurbani-flow-item {
+        cursor: pointer;
+        border-radius: 3px;
+        padding: 1px 2px;
+      }
+      .gurbani-flow-item:hover {
+        background: #f0e6c8;
+      }
+      .gurbani-flow-item.gurbani-flow-active {
+        background: #ffe9a8;
+      }
+      .gurbani-flow-item ${GURBANI_DISPLAY_SEL} {
+        display: inline !important;
+      }
+      .gurbani-flow-item ${GURBANI_DISPLAY_SEL} div {
+        display: inline !important;
+      }
+
+      /* Any line containing "<>": whole line red, forced onto every
+         descendant since the site's own CSS sets an explicit color that
+         would otherwise beat simple inheritance. */
+      .gurbani-flow-item.gurbani-flow-red-line,
+      .gurbani-flow-item.gurbani-flow-red-line * {
+        color: #c0392b !important;
+      }
+
+      /* Only the exact full Mool Mantar line: its own centered paragraph. */
+      .gurbani-flow-item.gurbani-flow-mool-para {
+        display: block !important;
+        text-align: center !important;
+        margin: 16px 0 !important;
+      }
+
+      .gurbani-flow-special {
+        color: #c0392b;
+      }
+
+      .gurbani-flow-tooltip {
+        position: fixed;
+        max-width: 520px;
+        max-height: 70vh;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+        padding: 12px 16px;
+        border-radius: 6px;
+        z-index: 99999;
+        font-size: 15px;
+        line-height: 1.4;
+      }
+      .gurbani-flow-tooltip .tt-gurbani {
+        margin-bottom: 8px;
+      }
+      .gurbani-flow-tooltip .tt-gurbani ${GURBANI_DISPLAY_SEL} {
+        display: block !important;
+      }
+      .gurbani-flow-tooltip .tt-gurbani div {
+        display: inline !important;
+      }
+      .gurbani-flow-tooltip .tt-section {
+        padding-top: 8px;
+        margin-top: 8px;
+        border-top: 1px solid #eee;
+        color: #333;
+      }
+      .gurbani-flow-tooltip .tt-section:first-of-type {
+        border-top: none;
+        margin-top: 0;
+        padding-top: 0;
+      }
+      .gurbani-flow-tooltip .tt-section blockquote {
+        margin: 0;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  let activeTooltip = null;
+  let activeItem = null;
+  let observer = null;
+
+  function hideTooltip() {
+    if (activeTooltip) activeTooltip.remove();
+    if (activeItem) activeItem.classList.remove('gurbani-flow-active');
+    activeTooltip = null;
+    activeItem = null;
+  }
+
+  function colorSpecialSymbols(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.includes('<>')) textNodes.push(node);
+    }
+    textNodes.forEach((textNode) => {
+      const parts = textNode.nodeValue.split('<>');
+      const frag = document.createDocumentFragment();
+      parts.forEach((part, i) => {
+        if (part) frag.appendChild(document.createTextNode(part));
+        if (i < parts.length - 1) {
+          const span = document.createElement('span');
+          span.className = 'gurbani-flow-special';
+          span.textContent = '<>';
+          frag.appendChild(span);
         }
+      });
+      textNode.parentNode.replaceChild(frag, textNode);
+    });
+  }
 
-        const label = document.createElement("div");
-        label.innerText = "Loading Ang...";
-        label.style.color = "#555";
-        label.style.fontSize = "16px";
+  function scaleFontSize(el, factor) {
+    const current = el.style.fontSize;
+    const match = current && current.match(/^([\d.]+)([a-z%]+)$/i);
+    if (match) {
+      const value = parseFloat(match[1]) * factor;
+      el.style.fontSize = value + match[2];
+    }
+  }
 
-        overlay.appendChild(spinner);
-        overlay.appendChild(label);
-        document.body.appendChild(overlay);
-        return overlay;
+  // Joins the trimmed text of every leaf word-span with no separator,
+  // giving a clean "spaceless" string to compare against a target line.
+  function getJoinedWords(gurbaniEl) {
+    const leafSpans = Array.from(gurbaniEl.querySelectorAll('span'))
+      .filter(s => s.children.length === 0);
+    return leafSpans.map(s => s.textContent.trim()).join('');
+  }
+
+  function buildExtraSections(wrapper) {
+    const frag = document.createDocumentFragment();
+    Array.from(wrapper.children).forEach((child) => {
+      if (child.matches(GURBANI_PARAGRAPH_SEL)) return;
+      if (!child.textContent.trim()) return;
+      const section = document.createElement('div');
+      section.className = 'tt-section';
+      const clone = child.cloneNode(true);
+      colorSpecialSymbols(clone);
+      section.appendChild(clone);
+      frag.appendChild(section);
+    });
+    return frag;
+  }
+
+  function positionTooltip(tooltip, itemEl) {
+    const rect = itemEl.getBoundingClientRect();
+    const tRect = tooltip.getBoundingClientRect();
+
+    let left = rect.left;
+    const maxLeft = window.innerWidth - tRect.width - 10;
+    left = Math.min(Math.max(left, 10), Math.max(10, maxLeft));
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    let top;
+    if (spaceBelow >= tRect.height + 10 || spaceBelow >= spaceAbove) {
+      top = rect.bottom + 6;
+    } else {
+      top = rect.top - tRect.height - 6;
+    }
+    top = Math.min(Math.max(top, 10), Math.max(10, window.innerHeight - tRect.height - 10));
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+
+  function showTooltip(wrapper, itemEl) {
+    hideTooltip();
+
+    const gurbaniEl = wrapper.querySelector(GURBANI_DISPLAY_SEL);
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'gurbani-flow-tooltip';
+
+    if (gurbaniEl) {
+      const g = document.createElement('div');
+      g.className = 'tt-gurbani';
+      const ttClone = gurbaniEl.cloneNode(true);
+      colorSpecialSymbols(ttClone);
+      g.appendChild(ttClone);
+      tooltip.appendChild(g);
     }
 
-    function hideLoadingOverlay() {
-        const overlay = document.querySelector("#sttm-loading-overlay");
-        if (overlay) overlay.style.display = "none";
+    tooltip.appendChild(buildExtraSections(wrapper));
+
+    document.body.appendChild(tooltip);
+    positionTooltip(tooltip, itemEl);
+
+    itemEl.classList.add('gurbani-flow-active');
+    activeTooltip = tooltip;
+    activeItem = itemEl;
+  }
+
+  function relocateToolbar() {
+    const navBar = document.querySelector('#nav-bar.header');
+    const toolbar = document.querySelector('.shabad-settings');
+    if (navBar && toolbar && toolbar.parentElement !== navBar) {
+      navBar.appendChild(toolbar);
     }
+  }
 
-    // ---------- Tuk saving (Shift+Click on a tuk) ----------
-    const SAVED_TUKS_KEY = "sttm_saved_tuks";
+  function isOwnMutation(mutations) {
+    return mutations.every(m => {
+      const nodes = [...m.addedNodes, ...m.removedNodes];
+      if (nodes.length === 0) return true;
+      return nodes.every(n => {
+        if (n.nodeType !== 1) return true;
+        if (n.classList && (n.classList.contains('gurbani-flow-tooltip') || n.classList.contains('gurbani-flow-container'))) return true;
+        if (n.closest && (n.closest('.gurbani-flow-tooltip') || n.closest('.gurbani-flow-container'))) return true;
+        return false;
+      });
+    });
+  }
 
-    function getSavedTuks() {
-        try {
-            const raw = localStorage.getItem(SAVED_TUKS_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (err) {
-            console.error("sttm: failed to read saved tuks from localStorage", err);
-            return [];
-        }
-    }
+  function stripWordSpacing(gurbaniClone) {
+    const leafSpans = Array.from(gurbaniClone.querySelectorAll('span'))
+      .filter(s => s.children.length === 0);
+    leafSpans.forEach((span, idx) => {
+      span.textContent = span.textContent.trim();
+      if (idx < leafSpans.length - 1) {
+        span.insertAdjacentText('afterend', '\u200B');
+      }
+    });
+    return gurbaniClone;
+  }
 
-    function saveTuk(tukText) {
-        if (!tukText) return false;
-        try {
-            const saved = getSavedTuks();
-            // Avoid duplicate entries for the same tuk text.
-            if (saved.some((entry) => entry.tukText === tukText)) {
-                return "duplicate";
-            }
-            saved.push({
-                tukText: tukText,
-                ang: new URL(location.href).searchParams.get("ang"),
-                url: location.href,
-                savedAt: new Date().toISOString(),
-            });
-            localStorage.setItem(SAVED_TUKS_KEY, JSON.stringify(saved));
-            return true;
-        } catch (err) {
-            // Most likely a quota error or localStorage disabled.
-            console.error("sttm: failed to save tuk", err);
-            return false;
-        }
-    }
+  function rebuild() {
+    if (observer) observer.disconnect();
 
-    // Brief, self-removing flash so a save is confirmed without adding any
-    // persistent UI. Reuses the same wheat highlight already used on hover.
-    function flashSaved(el, ok) {
-        const original = el.style.backgroundColor;
-        el.style.backgroundColor = ok === "duplicate" ? "#ffd54f" : (ok ? "#a5d6a7" : "#ef9a9a");
-        setTimeout(() => {
-            el.style.backgroundColor = original;
-        }, 300);
-    }
+    document.querySelectorAll('.gurbani-flow-container').forEach(el => el.remove());
+    document.querySelectorAll(WRAPPER_SEL).forEach(el => el.classList.remove('gurbani-flow-hidden-original'));
+    hideTooltip();
+    relocateToolbar();
 
-    // Show overlay immediately, before anything else runs
-    showLoadingOverlay();
+    const wrappers = Array.from(document.querySelectorAll(WRAPPER_SEL));
+    const groups = new Map();
+    wrappers.forEach(w => {
+      const parent = w.parentElement;
+      if (!parent) return;
+      if (!groups.has(parent)) groups.set(parent, []);
+      groups.get(parent).push(w);
+    });
 
-    // Tuks that should always start a new paragraph, matched exactly against
-    // the concatenated Gurmukhi text of the tuk (no spaces, same shape as
-    // "completeTuk" below). Add more exact strings here as needed.
-    const specialTuks = new Set([
-        "ਨਾਨਕਤੇਮੁਖਉਜਲੇਕੇਤੀਛੁਟੀਨਾਲਿ॥੧॥",
-        "ਜਿਹਸਿਮਰਤਸੰਕਟਮਿਟੈਦਰਸੁਤੁਹਾਰੋਹੋਇ॥੫੭॥੧॥",
-		"ਮਹਲੇਪਹਿਲੇਸਤਾਰਹਅਸਟਪਦੀਆ॥",
-    ]);
+    groups.forEach((list, parent) => {
+      const flowContainer = document.createElement('div');
+      flowContainer.className = 'gurbani-flow-container';
+      parent.insertBefore(flowContainer, list[0]);
 
-    function formatPage() {
-        document.querySelector("#nav-bar").style.display = "none";
-        document.querySelector(".breadcrumb").style.display = "none";
-        document.querySelector("#controls-menu").style.display = "none";
-        document.querySelector(".pagination-ang").style.display = "none";
-        document.querySelector(".footer-background").style.display = "none";
-        document.querySelector("#freshworks-container").style.display = "none";
-        document.querySelector(".floatingActions").style.display = "none";
-		document.querySelector(".review-translations-banner").style.display = "none";
-        const contentRoot = document.querySelector("#content-root");
-        contentRoot.style.maxWidth = "100%";
-        const shabad = document.querySelector("#shabad");
-        shabad.style.padding = "64px 10px 5px 10px";
-        shabad.style.display = "block";
-        shabad.style.lineBreak = "anywhere";
-        shabad.style.height = "1500px";
-        const topButtonRow = document.querySelector(".shabad-container");
-        topButtonRow.style.position = "fixed";
-        topButtonRow.style.marginTop = "-15px";
-        const topButtonRowNew = document.querySelector("#metadata");
-        topButtonRowNew.children[1].children[1].style.display = "none";
-        topButtonRowNew.style.padding = "0px";
-        topButtonRowNew.style.margin = "0rem 2rem 0rem 2rem";
-        topButtonRowNew.style.position = "fixed";
-		topButtonRowNew.style.height = "60px";
-		document.querySelector('.floatingActionsBottom').style.display = "none";
-        let shabadPage = document.querySelector(".shabadPage");
-        if (!shabadPage) {
-            shabadPage = document.createElement("div");
-            shabadPage.classList.add("shabadPage");
-            shabadPage.style.padding = "5px 10px 5px 2px";
-            shabad.appendChild(shabadPage);
+      list.forEach(wrapper => {
+        const gurbaniEl = wrapper.querySelector(GURBANI_DISPLAY_SEL);
+        if (!gurbaniEl) return;
+
+        const containsBrackets = gurbaniEl.textContent.includes('<>');
+        const joinedWords = containsBrackets ? getJoinedWords(gurbaniEl) : '';
+        const isMoolMantarLine = joinedWords === MOOL_MANTAR_LINE;
+
+        const itemEl = document.createElement('span');
+        itemEl.className = 'gurbani-flow-item';
+        const flowClone = stripWordSpacing(gurbaniEl.cloneNode(true));
+
+        if (containsBrackets) {
+          itemEl.classList.add('gurbani-flow-red-line');
         } else {
-            shabadPage.innerHTML = "";
+          colorSpecialSymbols(flowClone);
         }
-		let tukList = [];
-		let countOfIkOankarOnPage = 0;
-        document.querySelectorAll(".mixed-view-baani-wrapper").forEach((minViewBaniWrapper) => {
-            const newDiv = document.createElement("span");
-            let wordsDiv;
-            minViewBaniWrapper.querySelectorAll(".unicode").forEach((unicode) => {
-                if (unicode.children.length > 0) {
-                    let containWords = false;
-					let containIkOankar = false;
-					let completeTuk = '';
-                    wordsDiv = document.createElement("span");
-                    wordsDiv.classList.add("tuk");
-                    wordsDiv.style.fontFamily = "AnmolUni";
-                    wordsDiv.style.fontSize = "40px";
-                    wordsDiv.style.paddingTop = "10px";
-                    wordsDiv.style.paddingBottom = "5px";
-					for (let word of unicode.children) {
-						completeTuk += word.textContent.trim();
-						// console.log('Inside word.textContent.trim() :::' + word.textContent.trim());
-						// console.log('Inside completeTuk :::' + completeTuk);
-					}
-					console.log('completeTuk :::' + completeTuk);
-					if (completeTuk  &&  completeTuk.includes('ੴਸਤਿਨਾਮੁਕਰਤਾਪੁਰਖੁਨਿਰਭਉਨਿਰਵੈਰੁਅਕਾਲਮੂਰਤਿਅਜੂਨੀਸੈਭੰਗੁਰਪ੍ਰਸਾਦਿ')) {
-						wordsDiv.style.fontSize = "60px";
-						wordsDiv.style.display = "block";
-						wordsDiv.style.color = "maroon";
-						wordsDiv.style.textAlign = "center";
-					}
-					else if (completeTuk  &&  completeTuk.includes('ੴ')) {
-						wordsDiv.style.color = "maroon";
-						// wordsDiv.style.fontWeight = "bold";
-					}
-					if (document.querySelector('#metadata > div.meta > h4.gurbani-font > a').innerHTML.includes('347')) {
-						const body = document.body;
-						body.style.backgroundColor = "aliceblue";
-					}
-					else {
-						const body = document.body;
-						body.style.backgroundColor = "#f5f5f5";
-					}
-                    for (let word of unicode.children) {
-                        containWords = true;
-                        const wordDiv = document.createElement("span");
-						wordDiv.textContent = word.textContent.trim();
-                        /*if (word.textContent.trim() == "ੴ") {
-							countOfIkOankarOnPage++;
-							containIkOankar = true;
-                            wordDiv.style.fontWeight = "bold";
-                            wordDiv.style.color = "crimson";
-                        }*/
-                        wordsDiv.appendChild(wordDiv);
-                    }
-                    if (containWords) {
-                        newDiv.appendChild(wordsDiv);
-                        // Stash the raw concatenated text so the paragraph-break
-                        // loop below can exact-match it against specialTuks.
-                        newDiv.dataset.tukText = completeTuk;
-                    }
-                }
-            });
-            const tooltip = minViewBaniWrapper.cloneNode(true);
-            tooltip.style.display = "none";
-            tooltip.style.zIndex = 999;
-            tooltip.style.position = "absolute";
-            tooltip.style.backgroundColor = "#ddd";
-            tooltip.style.transform = "translateX(-50%)";
-            tooltip.style.left = "50%";
-            tooltip.style.width = "1000px";
-            tooltip.style.padding = "25px 25px 25px 25px";
-            newDiv.appendChild(tooltip);
-            minViewBaniWrapper.style.display = "none";
-            // shabadPage.appendChild(newDiv);
-			
-			const viewportWidth = window.innerWidth;
-			const viewportHeight = window.innerHeight;
 
-            newDiv.addEventListener("click", function (e) {
-				// Shift+Click saves the tuk instead of toggling the tooltip/highlight.
-				if (e.ctrlKey) {
-					const result = saveTuk(newDiv.dataset.tukText);
-					flashSaved(wordsDiv || newDiv, result);
-					return;
-				}
-				if (wordsDiv) {
-					if (wordsDiv.style.color != 'red') {
-						wordsDiv.style.color = 'red';
-					  }
-					else {
-						wordsDiv.style.color = '#03669b';
-					}
-				}
-                if (newDiv.children[1].style.display == "none") {
-                    newDiv.children[1].style.display = "";
-                } else {
-                    newDiv.children[1].style.display = "none";
-                }
-				// console.log('mouseclick Y coordinates e.clientY :::' + e.clientY);
-				// console.log('tooltip height tooltip.offsetHeight :::' + tooltip.offsetHeight);
-				// console.log('tooltip height newDiv.children[1].offsetHeight ::' + newDiv.children[1].offsetHeight);
-				// console.log('viewportHeight ::' + viewportHeight);
-				if (((e.clientY + 50 + newDiv.children[1].offsetHeight) > viewportHeight)  &&  ((e.clientY - newDiv.children[1].offsetHeight) > 0)) {
-					newDiv.children[1].style.top = (e.clientY - 50 - newDiv.children[1].offsetHeight) + 'px';
-				}
-				else {
-					newDiv.children[1].style.top = (e.clientY + 50) + 'px';
-				}
-				// console.log('newDiv.children[1].style.top :: ' + newDiv.children[1].style.top);
-            });
-            if (wordsDiv) {
-                wordsDiv.addEventListener("mouseenter", function () {
-                    wordsDiv.style.backgroundColor = "wheat";
-                });
-                wordsDiv.addEventListener("mouseleave", function () {
-                    wordsDiv.style.backgroundColor = "";
-                });
-            }
-			tukList.push(newDiv);
+        if (isMoolMantarLine) {
+          itemEl.classList.add('gurbani-flow-mool-para');
+          scaleFontSize(flowClone, 1.35);
+        }
+
+        itemEl.appendChild(flowClone);
+        itemEl.appendChild(document.createTextNode(' '));
+
+        itemEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (activeItem === itemEl) {
+            hideTooltip();
+          } else {
+            showTooltip(wrapper, itemEl);
+          }
         });
-		
-		let lastNewParaAfter = 0;
-		for (let i = 0; i < tukList.length; i++) {
-		// tukList.forEach((newDiv) => {
-			
-			let newDiv = tukList[i];
-			// console.log(newDiv.textContent);
-			// console.log(JSON.stringify(newDiv));
-			
-			// If ੴ starts without ||<number>||<number>||. For e.g. on Ang 343, 344
-			if ((newDiv.innerHTML.includes('ੴ'))  &&  (i > lastNewParaAfter + 3)) {
-				shabadPage.appendChild(document.createElement("p"));
-				lastNewParaAfter = i;
-			}
-			
-			shabadPage.appendChild(newDiv);
 
-			// If this tuk's text exactly matches one of the configured
-			// specialTuks, force a new paragraph AFTER it (not before).
-			// Skipped if a paragraph was already started within the last
-			// 3 tuks, same guard window used everywhere else below, so a
-			// specialTuk immediately following a ੴ break (or vice versa)
-			// doesn't produce a spurious extra blank paragraph.
-			if ((specialTuks.has(newDiv.dataset.tukText))  &&  (i > lastNewParaAfter + 3)) {
-				shabadPage.appendChild(document.createElement("p"));
-				lastNewParaAfter = i;
-			}
+        flowContainer.appendChild(itemEl);
+        wrapper.classList.add('gurbani-flow-hidden-original');
+      });
+    });
 
-			console.log('tukList[i].dataset.tukText ::' + tukList[i].dataset.tukText);
-			// const regex = /\|\|\d+\|\|\d+\|\|/;
-			const regex = /॥[੦-੯]+॥[੦-੯]+॥/;
-			// Check if current tuk is shabad ending indicated by presence of ||<number>||<number>||
-			if (regex.test(newDiv.innerHTML)) {
-				console.log('Pattern found!!');
+    observer = new MutationObserver(debounce((mutations) => {
+      if (isOwnMutation(mutations)) return;
+      rebuild();
+    }, 300));
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
-				// If a specialTuks match occurs within the next 3 lines,
-				// that match's own after-break (above) is where the
-				// paragraph should go — so the ||n||n|| break must NOT
-				// fire here, unconditionally.
-				let specialTukComingUp = false;
-				for (let j = 1; j <= 3; j++) {
-					console.log('tukList[i+j].dataset.tukText ::' + tukList[i+j].dataset.tukText);
-					if (i+j < tukList.length  &&  specialTuks.has(tukList[i+j].dataset.tukText)) {
-						specialTukComingUp = true;
-						break;
-					}
-				}
-				console.log('specialTukComingUp ::' + specialTukComingUp);
+  function debounce(fn, ms) {
+    let t;
+    return function (...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), ms);
+    };
+  }
 
-				if (!specialTukComingUp) {
-					let nextUpIkOankar = false;
-					// check next 5 tuks to see if ੴ is present in them.
-					for (let j = 0; j < 5; j++) {
-						if (i+j < tukList.length) {
-							nextUpIkOankar = nextUpIkOankar || tukList[i+j].innerHTML.includes('ੴ');
-						}
-					}
+  rebuild();
 
-					// if ੴ is present, then add a new line.
-					if (nextUpIkOankar  &&  (i > lastNewParaAfter + 3)) {
-						shabadPage.appendChild(document.createElement("p"));
-						lastNewParaAfter = i;
-					}
-				}
-			}
-			
-		} // );
-
-        // Formatting is done — safe to reveal the page now
-        hideLoadingOverlay();
+  document.addEventListener('click', (e) => {
+    if (activeTooltip && !activeTooltip.contains(e.target) && !e.target.closest('.gurbani-flow-item')) {
+      hideTooltip();
     }
+  });
+  window.addEventListener('scroll', hideTooltip, { passive: true });
 
-    formatPage();
-    const button = document.createElement("button");
-    button.classList.add("formatPageButton");
-    button.innerText = "Format Page";
-    Object.assign(button.style, {
-        position: "fixed",
-        top: "10px",
-        right: "120px",
-        zIndex: "9999",
-        padding: "10px 15px",
-        backgroundColor: "#007BFF",
-        color: "#fff",
-        border: "none",
-        borderRadius: "5px",
-        fontSize: "14px",
-        cursor: "pointer",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    });
-    document.body.appendChild(button);
-    button.addEventListener("click", function () {
-        formatPage();
-    });
-    document.addEventListener("keydown", function (event) {
-        if (event.key === "ArrowRight" || event.key === "k") {
-            document.querySelectorAll(".shabad-nav a")[1].click();
-        }
-        if (event.key === "ArrowLeft" || event.key === "h") {
-            document.querySelectorAll(".shabad-nav a")[0].click();
-        }
-        if (event.key === "j" || event.key === "J") {
-            document.querySelector(".formatPageButton").click();
-        }
-    });
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	let lastAng = null;
-	let running = false;
+  function isTypingInField(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
 
-	function waitForSettled(selector, {
-	  settleMs = 1300,
-	  timeoutMs = 8000
-	} = {}) {
-	  return new Promise((resolve, reject) => {
-		const start = Date.now();
-		let lastCount = -1;
-		let lastMutationAt = Date.now();
+  document.addEventListener('keydown', (e) => {
+    if (isTypingInField(document.activeElement)) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 
-		const check = () => {
-		  const nodes = document.querySelectorAll(selector);
-		  const count = nodes.length;
-
-		  if (count > 0 && count === lastCount) {
-			// count is stable; if DOM also hasn't changed recently, we're done
-			if (Date.now() - lastMutationAt >= settleMs) {
-			  obs.disconnect();
-			  resolve(nodes);
-			}
-		  } else {
-			lastCount = count;
-		  }
-		};
-
-		const obs = new MutationObserver(() => {
-		  lastMutationAt = Date.now();
-		  check();
-		});
-
-		obs.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-
-		// initial check + timeout
-		const t = setInterval(() => {
-		  check();
-		  if (Date.now() - start > timeoutMs) {
-			clearInterval(t);
-			obs.disconnect();
-			reject(new Error(`Timeout waiting for "${selector}" to settle`));
-		  }
-		}, 50);
-	  });
-	}
-
-	async function trackAndFormat() {
-	  const currentAng = new URL(location.href).searchParams.get("ang");
-	  console.log("ang loaded -> formatting:", currentAng, new Date().toISOString());
-	  // navigator.sendBeacon('/track', JSON.stringify({ event: 'ang_loaded', ang: currentAng, at: Date.now() }));
-	  document.querySelector(".formatPageButton")?.click();
-	}
-
-	const observer = new MutationObserver(async () => {
-	  const ang = new URL(location.href).searchParams.get("ang");
-	  if (!ang || ang === lastAng || running) return;
-
-	  lastAng = ang;
-	  running = true;
-	  showLoadingOverlay();
-
-	  try {
-		await waitForSettled(".mixed-view-baani-wrapper", { settleMs: 500, timeoutMs: 8000 });
-		await trackAndFormat();
-	  } catch (err) {
-		console.error("sttm: failed waiting for page to settle", err);
-	  } finally {
-		running = false;
-		// Safety net: even if formatPage() never ran (e.g. timeout), don't leave the user stuck
-		hideLoadingOverlay();
-	  }
-	});
-
-	observer.observe(document.documentElement, { childList: true, subtree: true });
+    const label = e.key === 'ArrowLeft' ? 'Previous Ang' : 'Next Ang';
+    const btn = document.querySelector(`[aria-label="${label}"]`);
+    if (btn) {
+      e.preventDefault();
+      btn.click();
+    }
+  });
 })();
