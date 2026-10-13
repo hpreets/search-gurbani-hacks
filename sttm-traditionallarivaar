@@ -37,6 +37,7 @@
       .header-section--right,
       .shabad-rail,
       .sui-sidebar,
+	  .floating-actions,
       .footer {
         display: none !important;
       }
@@ -107,15 +108,11 @@
         display: inline !important;
       }
 
-      /* Any line containing "<>": whole line red, forced onto every
-         descendant since the site's own CSS sets an explicit color that
-         would otherwise beat simple inheritance. */
       .gurbani-flow-item.gurbani-flow-red-line,
       .gurbani-flow-item.gurbani-flow-red-line * {
         color: #c0392b !important;
       }
 
-      /* Only the exact full Mool Mantar line: its own centered paragraph. */
       .gurbani-flow-item.gurbani-flow-mool-para {
         display: block !important;
         text-align: center !important;
@@ -178,6 +175,15 @@
     activeItem = null;
   }
 
+  function stripVisraamColors(root) {
+    root.querySelectorAll('[class*="sui-visraam"]').forEach((el) => {
+      el.className = el.className
+        .split(' ')
+        .filter((c) => c && !c.startsWith('sui-visraam'))
+        .join(' ');
+    });
+  }
+
   function colorSpecialSymbols(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const textNodes = [];
@@ -210,8 +216,6 @@
     }
   }
 
-  // Joins the trimmed text of every leaf word-span with no separator,
-  // giving a clean "spaceless" string to compare against a target line.
   function getJoinedWords(gurbaniEl) {
     const leafSpans = Array.from(gurbaniEl.querySelectorAll('span'))
       .filter(s => s.children.length === 0);
@@ -266,9 +270,31 @@
     if (gurbaniEl) {
       const g = document.createElement('div');
       g.className = 'tt-gurbani';
-      const ttClone = gurbaniEl.cloneNode(true);
+
+      // Full ancestor chain, including the "sui-visraams-colored-words"
+      // toggle class — the site's CSS for visraam (pause) coloring is
+      // scoped under this class, not just the span's own class.
+      const ancestorContent = document.createElement('div');
+      ancestorContent.className = 'sui-shabad-content sui-visraams-colored-words';
+      const ancestorBaani = document.createElement('div');
+      ancestorBaani.className = 'sui-mixed-view-baani';
+      const ancestorWrap = document.createElement('div');
+      ancestorWrap.className = 'sui-mixed-view-baani-wrapper';
+      const ancestorPara = document.createElement('div');
+      ancestorPara.className = 'sui-mixed-view-baani-paragraph';
+      const ancestorLine = document.createElement('div');
+      ancestorLine.className = 'sui-gurbani-line';
+
+      const ttClone = gurbaniEl.cloneNode(true); // untouched: visraam colors kept
       colorSpecialSymbols(ttClone);
-      g.appendChild(ttClone);
+
+      ancestorLine.appendChild(ttClone);
+      ancestorPara.appendChild(ancestorLine);
+      ancestorWrap.appendChild(ancestorPara);
+      ancestorBaani.appendChild(ancestorWrap);
+      ancestorContent.appendChild(ancestorBaani);
+      g.appendChild(ancestorContent);
+
       tooltip.appendChild(g);
     }
 
@@ -281,7 +307,7 @@
     activeTooltip = tooltip;
     activeItem = itemEl;
   }
-
+  
   function relocateToolbar() {
     const navBar = document.querySelector('#nav-bar.header');
     const toolbar = document.querySelector('.shabad-settings');
@@ -348,6 +374,8 @@
         const itemEl = document.createElement('span');
         itemEl.className = 'gurbani-flow-item';
         const flowClone = stripWordSpacing(gurbaniEl.cloneNode(true));
+
+        stripVisraamColors(flowClone);
 
         if (containsBrackets) {
           itemEl.classList.add('gurbani-flow-red-line');
